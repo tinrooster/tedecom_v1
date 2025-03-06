@@ -16,25 +16,39 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Tooltip
+  Tooltip,
+  Badge,
+  Chip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
+  ViewModule as RacksIcon,
   Inventory as InventoryIcon,
   Assessment as AssessmentIcon,
   Settings as SettingsIcon,
   People as PeopleIcon,
   Logout as LogoutIcon,
-  AccountCircle as AccountCircleIcon
+  AccountCircle as AccountCircleIcon,
+  Notifications as NotificationsIcon,
+  Help as HelpIcon
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+
+// Mock auth hook until the real one is available
+const useAuth = () => {
+  return {
+    user: { username: 'demo', role: 'admin' },
+    logout: () => console.log('Logout')
+  };
+};
 
 const drawerWidth = 240;
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   title?: string;
 }
 
@@ -45,9 +59,13 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notificationsAnchorEl, setNotificationsAnchorEl] = useState<null | HTMLElement>(null);
+  const [helpAnchorEl, setHelpAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -59,6 +77,22 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
 
   const handleProfileMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleNotificationsMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setNotificationsAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationsMenuClose = () => {
+    setNotificationsAnchorEl(null);
+  };
+
+  const handleHelpMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setHelpAnchorEl(event.currentTarget);
+  };
+
+  const handleHelpMenuClose = () => {
+    setHelpAnchorEl(null);
   };
 
   const handleLogout = () => {
@@ -73,17 +107,35 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
-    { text: 'Workflows', icon: <AssessmentIcon />, path: '/workflows' },
     { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
     { text: 'Users', icon: <PeopleIcon />, path: '/users', role: 'admin' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/settings', role: 'admin' },
   ];
 
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === '/') return 'Dashboard';
+    
+    const menuItem = menuItems.find(item => item.path === path);
+    if (menuItem) return menuItem.text;
+    
+    if (path.startsWith('/workflows/')) return 'Workflow Details';
+    if (path.startsWith('/equipment/')) return 'Equipment Details';
+    
+    return title;
+  };
+
   const drawer = (
     <div>
-      <Toolbar>
+      <Toolbar sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText
+      }}>
         <Typography variant="h6" noWrap component="div">
           Tedecom
         </Typography>
@@ -96,12 +148,39 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
             <ListItem key={item.text} disablePadding>
               <ListItemButton 
                 selected={location.pathname === item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  navigate(item.path);
+                  if (isMobile) setMobileOpen(false);
+                }}
+                sx={{
+                  '&.Mui-selected': {
+                    backgroundColor: theme.palette.primary.light,
+                    color: theme.palette.primary.contrastText,
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.main,
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: theme.palette.primary.contrastText,
+                    }
+                  },
+                }}
               >
-                <ListItemIcon>
+                <ListItemIcon sx={{
+                  color: location.pathname === item.path 
+                    ? theme.palette.primary.contrastText 
+                    : theme.palette.text.primary
+                }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.text} />
+                {item.text === 'Reports' && (
+                  <Chip 
+                    label="3" 
+                    size="small" 
+                    color="secondary" 
+                    sx={{ ml: 1, height: 20, minWidth: 20 }} 
+                  />
+                )}
               </ListItemButton>
             </ListItem>
           )
@@ -131,11 +210,85 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {title}
+            {getPageTitle()}
           </Typography>
           
           {user && (
             <>
+              <Tooltip title="Help">
+                <IconButton
+                  size="large"
+                  color="inherit"
+                  onClick={handleHelpMenuOpen}
+                >
+                  <HelpIcon />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={helpAnchorEl}
+                open={Boolean(helpAnchorEl)}
+                onClose={handleHelpMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={handleHelpMenuClose}>Documentation</MenuItem>
+                <MenuItem onClick={handleHelpMenuClose}>FAQ</MenuItem>
+                <MenuItem onClick={handleHelpMenuClose}>Contact Support</MenuItem>
+              </Menu>
+
+              <Tooltip title="Notifications">
+                <IconButton
+                  size="large"
+                  color="inherit"
+                  onClick={handleNotificationsMenuOpen}
+                >
+                  <Badge badgeContent={4} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={notificationsAnchorEl}
+                open={Boolean(notificationsAnchorEl)}
+                onClose={handleNotificationsMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={handleNotificationsMenuClose}>
+                  <Typography variant="body2" color="text.secondary">
+                    Equipment #A1234 ready for decommission
+                  </Typography>
+                </MenuItem>
+                <MenuItem onClick={handleNotificationsMenuClose}>
+                  <Typography variant="body2" color="text.secondary">
+                    New report generated: Inventory Status
+                  </Typography>
+                </MenuItem>
+                <MenuItem onClick={handleNotificationsMenuClose}>
+                  <Typography variant="body2" color="text.secondary">
+                    Workflow #WF-2023-001 completed
+                  </Typography>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleNotificationsMenuClose}>
+                  <Typography variant="body2" color="primary">
+                    View all notifications
+                  </Typography>
+                </MenuItem>
+              </Menu>
+
               <Tooltip title="Account settings">
                 <IconButton
                   size="large"
@@ -146,7 +299,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
                   onClick={handleProfileMenuOpen}
                   color="inherit"
                 >
-                  <Avatar sx={{ width: 32, height: 32 }}>
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.secondary.main }}>
                     {user.username.charAt(0).toUpperCase()}
                   </Avatar>
                 </IconButton>
@@ -227,7 +380,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Tedecom' }) => {
           marginTop: '64px' 
         }}
       >
-        {children}
+        {children || <Outlet />}
       </Box>
     </Box>
   );
