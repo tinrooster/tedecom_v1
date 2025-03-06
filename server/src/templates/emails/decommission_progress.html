@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: Arial, sans-serif; line-height: 1.6; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #f8f9fa; padding: 20px; border-radius: 5px; }
+      .content { padding: 20px; }
+      .footer { text-align: center; padding: 20px; color: #6c757d; }
+      .progress-bar { width: 100%; height: 20px; background-color: #e9ecef; border-radius: 10px; overflow: hidden; }
+      .progress-fill { height: 100%; background-color: #28a745; transition: width 0.3s ease; }
+      .progress-text { text-align: center; margin-top: 5px; }
+      .timeline { margin: 20px 0; padding: 20px; background-color: #f8f9fa; border-radius: 5px; }
+      .timeline-item { margin-bottom: 15px; padding-left: 20px; border-left: 2px solid #dee2e6; }
+      .timeline-date { font-weight: bold; color: #495057; }
+      .timeline-content { margin-top: 5px; }
+      .chart { margin: 20px 0; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>{{title}}</h2>
+        <p>Generated on: {{generatedAt}}</p>
+      </div>
+      <div class="content">
+        <h3>Overall Progress</h3>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: {{overallProgress}}%"></div>
+        </div>
+        <div class="progress-text">
+          {{overallProgress}}% Complete
+        </div>
+
+        <div class="timeline">
+          <h3>Recent Activities</h3>
+          {{#each recentActivities}}
+          <div class="timeline-item">
+            <div class="timeline-date">{{date}}</div>
+            <div class="timeline-content">{{description}}</div>
+          </div>
+          {{/each}}
+        </div>
+
+        <h3>Progress by Department</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <thead>
+            <tr>
+              <th style="padding: 10px; border: 1px solid #dee2e6;">Department</th>
+              <th style="padding: 10px; border: 1px solid #dee2e6;">Progress</th>
+              <th style="padding: 10px; border: 1px solid #dee2e6;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each departmentProgress}}
+            <tr>
+              <td style="padding: 10px; border: 1px solid #dee2e6;">{{name}}</td>
+              <td style="padding: 10px; border: 1px solid #dee2e6;">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: {{progress}}%"></div>
+                </div>
+                <div class="progress-text">{{progress}}%</div>
+              </td>
+              <td style="padding: 10px; border: 1px solid #dee2e6;">{{status}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+
+        <div class="chart">
+          <h3>Progress Over Time</h3>
+          <img src="{{progressChart}}" alt="Progress Chart" style="max-width: 100%; height: auto;">
+        </div>
+      </div>
+      <div class="footer">
+        <p>This is an automated report from the Server Room Decommissioning System.</p>
+      </div>
+    </div>
+  </body>
+</html> 
