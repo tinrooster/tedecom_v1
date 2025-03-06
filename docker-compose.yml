@@ -12,6 +12,11 @@ services:
     networks:
       - tedecom-network
     restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://localhost:5000
+    volumes:
+      - ./client/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
 
   backend:
     build:
@@ -34,6 +39,12 @@ services:
     networks:
       - tedecom-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/monitoring/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongodb:
     image: mongo:4
@@ -46,6 +57,12 @@ services:
     restart: unless-stopped
     environment:
       - MONGO_INITDB_DATABASE=tedecom
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/tedecom --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   tedecom-network:
