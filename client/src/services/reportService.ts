@@ -53,6 +53,23 @@ export const reportService = {
     return response.data;
   },
 
+  // Schedule a report
+  scheduleReport: async (reportId: string, scheduleData: {
+    frequency: string;
+    dayOfWeek?: number;
+    dayOfMonth?: number;
+    time: string;
+    recipients: string[];
+  }): Promise<Report> => {
+    const response = await axios.post(`${API_URL}/api/reports/${reportId}/schedule`, scheduleData);
+    return response.data.report;
+  },
+
+  // Cancel a scheduled report
+  cancelSchedule: async (reportId: string): Promise<void> => {
+    await axios.delete(`${API_URL}/api/reports/${reportId}/schedule`);
+  },
+
   // Generate equipment status report
   generateEquipmentStatusReport: async (params: {
     startDate?: Date;

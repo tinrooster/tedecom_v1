@@ -13,6 +13,9 @@ const settingsRoutes = require('./routes/settings');
 // Import middleware
 const { auth, checkRole } = require('./middleware/auth');
 
+// Import services
+const schedulerService = require('./services/schedulerService');
+
 // Load environment variables
 dotenv.config();
 
@@ -24,6 +27,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongodb:27017/tedecom'
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the reports directory
+app.use('/reports', auth, express.static(path.join(__dirname, '../../reports')));
 
 // Basic health check route - no auth required
 app.get('/api/monitoring/health', (req, res) => {
@@ -49,6 +55,15 @@ mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     
+    // Initialize the scheduler service
+    schedulerService.initialize()
+      .then(() => {
+        console.log('Scheduler service initialized');
+      })
+      .catch(err => {
+        console.error('Failed to initialize scheduler service', err);
+      });
+    
     // Start the server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -61,6 +76,9 @@ mongoose.connect(MONGODB_URI)
 
 // Handle process termination
 process.on('SIGINT', () => {
+  // Stop all scheduled jobs
+  schedulerService.clearAllJobs();
+  
   mongoose.connection.close(() => {
     console.log('MongoDB connection closed');
     process.exit(0);
