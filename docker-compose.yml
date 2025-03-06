@@ -1,14 +1,39 @@
+version: '3.8'
+
 services:
-  app:
-    build: .
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - tedecom-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
     environment:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/tedecom
       - LOG_DIR=/var/log/tedecom
+      - PORT=5000
+      - JWT_SECRET=your_jwt_secret_here
+      - CORS_ORIGIN=http://localhost
     depends_on:
       - mongodb
+    volumes:
+      - ./logs:/var/log/tedecom
+      - ./reports:/app/reports
+    networks:
+      - tedecom-network
+    restart: unless-stopped
 
   mongodb:
     image: mongo:4
@@ -16,6 +41,15 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    networks:
+      - tedecom-network
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=tedecom
+
+networks:
+  tedecom-network:
+    driver: bridge
 
 volumes:
   mongodb_data:
